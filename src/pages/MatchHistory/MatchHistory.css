@@ -1,0 +1,104 @@
+/* src/pages/MatchHistory/MatchHistory.css */
+.match-history-container {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background-color: #141d28; /* Dark background */
+  color: #fff;
+}
+
+.match-card {
+  background-color: #2a2f3a; /* Card background */
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.match-card:hover {
+  background-color: #3d4653; /* Hover effect */
+}
+
+.match-minimized {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #1a212d; /* Darker background for minimized view */
+  border-radius: 5px;
+}
+
+.match-date,
+.match-time {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.winning-team,
+.losing-team {
+  font-style: italic;
+  font-weight: normal;
+  color: #42d17e; /* Winning team color */
+}
+
+.losing-team {
+  color: #f85050; /* Losing team color */
+}
+
+.match-info {
+  display: none;
+  padding: 20px;
+  background-color: #1a212d;
+  border-radius: 5px;
+}
+
+.match-card:hover .match-info {
+  display: block;
+}
+
+.team-info {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.team {
+  width: 48%;
+}
+
+h4 {
+  font-size: 18px;
+  margin-bottom: 5px;
+  color: #d6d6d6;
+}
+
+.player-info {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100px; /* Adjust to fit your design */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 5px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7); /* For better text readability */
+}
+
+.player-info .player-name {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.player-info .player-kda {
+  font-size: 14px;
+  font-style: italic;
+}
+
+.player-info img {
+  display: none;
+}

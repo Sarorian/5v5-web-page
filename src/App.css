@@ -28,6 +28,85 @@
   color: #61dafb;
 }
 
+.dot-pulse {
+  position: absolute;
+  left: -9999px;
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background-color: #dd2113;
+  color: #dd2113;
+  box-shadow: 9999px 0 0 -5px #dd2113;
+  animation: dotPulse 1.5s infinite linear;
+  animation-delay: 0.25s;
+  margin-left: 50%;
+  margin-top: 20%;
+}
+
+.dot-pulse::before,
+.dot-pulse::after {
+  content: "";
+  display: inline-block;
+  position: absolute;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background-color: #dd2113;
+  color: #dd2113;
+}
+
+.dot-pulse::before {
+  box-shadow: 9984px 0 0 -5px #dd2113;
+  animation: dotPulseBefore 1.5s infinite linear;
+  animation-delay: 0s;
+}
+
+.dot-pulse::after {
+  box-shadow: 10014px 0 0 -5px #dd2113;
+  animation: dotPulseAfter 1.5s infinite linear;
+  animation-delay: 0.5s;
+}
+
+@keyframes dotPulseBefore {
+  0% {
+    box-shadow: 9984px 0 0 -5px #dd2113;
+  }
+  30% {
+    box-shadow: 9984px 0 0 2px #dd2113;
+  }
+  60%,
+  100% {
+    box-shadow: 9984px 0 0 -5px #dd2113;
+  }
+}
+
+@keyframes dotPulse {
+  0% {
+    box-shadow: 9999px 0 0 -5px #dd2113;
+  }
+  30% {
+    box-shadow: 9999px 0 0 2px #dd2113;
+  }
+  60%,
+  100% {
+    box-shadow: 9999px 0 0 -5px #dd2113;
+  }
+}
+
+@keyframes dotPulseAfter {
+  0% {
+    box-shadow: 10014px 0 0 -5px #dd2113;
+  }
+  30% {
+    box-shadow: 10014px 0 0 2px #dd2113;
+  }
+  60%,
+  100% {
+    box-shadow: 10014px 0 0 -5px #dd2113;
+  }
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
