@@ -13,16 +13,21 @@ const PlayersPage = () => {
         );
         const data = await response.json();
 
-        // Calculate points for each player
-        const playersWithPoints = data.map((player) => {
+        // Calculate points and KDA for each player
+        const playersWithPointsAndKDA = data.map((player) => {
           const wins = player.gamesPlayed.wins;
           const gamesPlayed = wins + player.gamesPlayed.losses;
           const points = gamesPlayed > 0 ? (wins / gamesPlayed) * wins : 0;
-          return { ...player, points };
+
+          // Calculate KDA
+          const deaths = player.deaths || 1; // Avoid division by zero
+          const kda = ((player.kills + player.assists) / deaths).toFixed(2);
+
+          return { ...player, points, kda };
         });
 
         // Sort players by points
-        const sortedPlayers = playersWithPoints.sort(
+        const sortedPlayers = playersWithPointsAndKDA.sort(
           (a, b) => b.points - a.points
         );
         setPlayers(sortedPlayers);
@@ -58,10 +63,8 @@ const PlayersPage = () => {
           </h2>
           <p style={styles.leaderText}>Points: {leader.points.toFixed(2)}</p>
           <p style={styles.leaderText}>
-            Wins: {leader.gamesPlayed.wins}, Losses: {leader.gamesPlayed.losses}
-          </p>
-          <p style={styles.leaderText}>
-            Favorite Champion: {leader.favoriteChampion}
+            KDA: {leader.kda} | Wins: {leader.gamesPlayed.wins}, Losses:{" "}
+            {leader.gamesPlayed.losses}
           </p>
         </div>
       )}
@@ -75,7 +78,7 @@ const PlayersPage = () => {
             >
               {index + 1}. {player.fullName} ({player.riotID})
             </Link>
-            - Points: {player.points.toFixed(2)} | Wins:{" "}
+            - Points: {player.points.toFixed(2)} | KDA: {player.kda} | Wins:{" "}
             {player.gamesPlayed.wins} | Losses: {player.gamesPlayed.losses}
           </li>
         ))}
