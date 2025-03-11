@@ -11,10 +11,9 @@ const Navbar = () => {
           </Link>
         </li>
         <li style={styles.navItem}>
-          <Link to="/match-history" style={styles.link}>
-            Match History
-          </Link>{" "}
-          {/* Add link to match history */}
+          <Link to="/players" style={styles.link}>
+            Players
+          </Link>
         </li>
       </ul>
     </nav>
