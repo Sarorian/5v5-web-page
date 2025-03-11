@@ -1,7 +1,7 @@
 {
   "name": "web-page",
   "version": "0.1.0",
-  "homepage": "https://sarorian.github.io/5v5-web-page",
+  "homepage": "https://sarorian.github.io/5v5-web-page/",
   "private": true,
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
