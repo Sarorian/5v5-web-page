@@ -5,6 +5,8 @@ const ChampionsPage = () => {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sortDirection, setSortDirection] = useState("desc"); // Track the sort direction for sorting
+  const [sortBy, setSortBy] = useState("presence"); // Track the sorting criteria
 
   useEffect(() => {
     const fetchData = async () => {
@@ -64,7 +66,6 @@ const ChampionsPage = () => {
   }
 
   const totalGames = matches.length;
-  console.log(matches.length);
 
   const calculateWinRate = (wins, gamesPlayed) => {
     return gamesPlayed > 0
@@ -90,12 +91,61 @@ const ChampionsPage = () => {
       : 0;
   };
 
-  // Sort champions by highest presence first
-  const sortedChampions = champions.sort((a, b) => {
-    const presenceA = calculatePresence(a.wins, a.losses, a.bans, totalGames);
-    const presenceB = calculatePresence(b.wins, b.losses, b.bans, totalGames);
-    return presenceB - presenceA; // Sort in descending order
-  });
+  const calculateGamesPlayed = (wins, losses) => {
+    return wins + losses;
+  };
+
+  // Function to sort the champions
+  const sortChampions = (champions, sortBy, sortDirection) => {
+    return champions.sort((a, b) => {
+      const presenceA = calculatePresence(a.wins, a.losses, a.bans, totalGames);
+      const presenceB = calculatePresence(b.wins, b.losses, b.bans, totalGames);
+      const winRateA = calculateWinRate(a.wins, a.wins + a.losses);
+      const winRateB = calculateWinRate(b.wins, b.wins + b.losses);
+      const pickRateA = calculatePickRate(a.wins, a.losses, totalGames);
+      const pickRateB = calculatePickRate(b.wins, b.losses, totalGames);
+      const banRateA = calculateBanRate(a.bans, totalGames);
+      const banRateB = calculateBanRate(b.bans, totalGames);
+      const gamesPlayedA = calculateGamesPlayed(a.wins, a.losses);
+      const gamesPlayedB = calculateGamesPlayed(b.wins, b.losses);
+
+      if (sortBy === "presence") {
+        return sortDirection === "desc"
+          ? presenceB - presenceA
+          : presenceA - presenceB;
+      } else if (sortBy === "winrate") {
+        return sortDirection === "desc"
+          ? winRateB - winRateA
+          : winRateA - winRateB;
+      } else if (sortBy === "pickrate") {
+        return sortDirection === "desc"
+          ? pickRateB - pickRateA
+          : pickRateA - pickRateB;
+      } else if (sortBy === "banrate") {
+        return sortDirection === "desc"
+          ? banRateB - banRateA
+          : banRateA - banRateB;
+      } else if (sortBy === "gamesplayed") {
+        return sortDirection === "desc"
+          ? gamesPlayedB - gamesPlayedA
+          : gamesPlayedA - gamesPlayedB;
+      }
+      return 0;
+    });
+  };
+
+  const sortedChampions = sortChampions(champions, sortBy, sortDirection);
+
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortDirection((prevDirection) =>
+        prevDirection === "desc" ? "asc" : "desc"
+      );
+    } else {
+      setSortBy(column);
+      setSortDirection("desc");
+    }
+  };
 
   return (
     <div style={styles.container}>
@@ -104,11 +154,54 @@ const ChampionsPage = () => {
         <thead>
           <tr>
             <th>Name</th>
-            <th>Presence</th>
-            <th>Winrate</th>
-            <th>Picked %</th>
-            <th>Banned %</th>
-            <th>Games Played</th>
+            <th>
+              <button
+                onClick={() => handleSort("presence")}
+                style={styles.sortButton}
+              >
+                Presence{" "}
+                {sortBy === "presence" &&
+                  (sortDirection === "desc" ? "↑" : "↓")}
+              </button>
+            </th>
+            <th>
+              <button
+                onClick={() => handleSort("winrate")}
+                style={styles.sortButton}
+              >
+                Winrate{" "}
+                {sortBy === "winrate" && (sortDirection === "desc" ? "↑" : "↓")}
+              </button>
+            </th>
+            <th>
+              <button
+                onClick={() => handleSort("pickrate")}
+                style={styles.sortButton}
+              >
+                Picked %{" "}
+                {sortBy === "pickrate" &&
+                  (sortDirection === "desc" ? "↑" : "↓")}
+              </button>
+            </th>
+            <th>
+              <button
+                onClick={() => handleSort("banrate")}
+                style={styles.sortButton}
+              >
+                Banned %{" "}
+                {sortBy === "banrate" && (sortDirection === "desc" ? "↑" : "↓")}
+              </button>
+            </th>
+            <th>
+              <button
+                onClick={() => handleSort("gamesplayed")}
+                style={styles.sortButton}
+              >
+                Games Played{" "}
+                {sortBy === "gamesplayed" &&
+                  (sortDirection === "desc" ? "↑" : "↓")}
+              </button>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -125,8 +218,8 @@ const ChampionsPage = () => {
               champion.wins,
               champion.losses,
               totalGames
-            ); // Picked % calculation
-            const banRate = calculateBanRate(champion.bans, totalGames); // Banned % calculation
+            );
+            const banRate = calculateBanRate(champion.bans, totalGames);
 
             return (
               <tr key={champion._id}>
@@ -168,6 +261,12 @@ const styles = {
   td: {
     padding: "10px",
     textAlign: "left",
+  },
+  sortButton: {
+    background: "none",
+    border: "none",
+    color: "#fff",
+    cursor: "pointer",
   },
 };
 
