@@ -5,8 +5,8 @@ const ChampionsPage = () => {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sortDirection, setSortDirection] = useState("desc"); // Track the sort direction for sorting
-  const [sortBy, setSortBy] = useState("presence"); // Track the sorting criteria
+  const [sortDirection, setSortDirection] = useState("desc");
+  const [sortBy, setSortBy] = useState("presence");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,19 +34,18 @@ const ChampionsPage = () => {
     fetchData();
   }, []);
 
-  const idToName = async (championId) => {
+  const idToNameAndIcon = async (championId) => {
     const url =
       "https://ddragon.leagueoflegends.com/cdn/15.5.1/data/en_US/champion.json";
     try {
-      // Fetch the champion data from the given URL
       const response = await fetch(url);
       const data = await response.json();
+      const champions = data.data;
 
-      const champions = data.data; // Get the champions data from the response
-
-      // Check if the championId exists and return the champion name
       if (champions[championId]) {
-        return champions[championId].name;
+        const champion = champions[championId];
+        const championIcon = `https://ddragon.leagueoflegends.com/cdn/15.5.1/img/champion/${championId}.png`;
+        return { name: champion.name, icon: championIcon };
       } else {
         console.error(`Champion with ID ${championId} not found`);
         return null;
@@ -69,7 +68,7 @@ const ChampionsPage = () => {
 
   const calculateWinRate = (wins, gamesPlayed) => {
     return gamesPlayed > 0
-      ? parseFloat(((wins / gamesPlayed) * 100).toFixed(2)) // Strips trailing zeroes if the value is a whole number
+      ? parseFloat(((wins / gamesPlayed) * 100).toFixed(2))
       : 0;
   };
 
@@ -95,7 +94,6 @@ const ChampionsPage = () => {
     return wins + losses;
   };
 
-  // Function to sort the champions
   const sortChampions = (champions, sortBy, sortDirection) => {
     return champions.sort((a, b) => {
       const presenceA = calculatePresence(a.wins, a.losses, a.bans, totalGames);
@@ -223,7 +221,18 @@ const ChampionsPage = () => {
 
             return (
               <tr key={champion._id}>
-                <td>{champion.name}</td>
+                <td>
+                  <img
+                    src={`https://ddragon.leagueoflegends.com/cdn/15.5.1/img/champion/${champion.name}.png`}
+                    alt={`${champion.name} icon`}
+                    style={{
+                      width: "30px",
+                      height: "30px",
+                      marginRight: "10px",
+                    }}
+                  />
+                  {champion.name}
+                </td>
                 <td>{presence}%</td>
                 <td>{winRate}%</td>
                 <td>{pickRate}%</td>
@@ -242,31 +251,31 @@ const styles = {
   container: {
     display: "flex",
     flexDirection: "column",
-    alignItems: "center", // Centers the content horizontally
-    justifyContent: "center", // Centers the content vertically
+    alignItems: "center",
+    justifyContent: "center",
     padding: "20px",
     backgroundColor: "#222",
     color: "#fff",
     borderRadius: "8px",
     boxShadow: "0px 4px 15px rgba(0, 0, 0, 0.3)",
     maxWidth: "1200px",
-    margin: "auto", // Center the container horizontally
-    minHeight: "100vh", // Ensure the container takes up full viewport height
+    margin: "auto",
+    minHeight: "100vh",
   },
   header: {
     fontSize: "28px",
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: "20px",
-    color: "#00bcd4", // Accent color for the header
+    color: "#00bcd4",
   },
   table: {
     width: "100%",
     borderCollapse: "collapse",
     backgroundColor: "#333",
-    borderRadius: "8px", // Rounded corners for the table
+    borderRadius: "8px",
     overflow: "hidden",
-    boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)", // Table shadow for depth
+    boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
   },
   th: {
     backgroundColor: "#444",
@@ -278,19 +287,12 @@ const styles = {
     cursor: "pointer",
     transition: "background-color 0.3s ease",
   },
-  thHover: {
-    backgroundColor: "#555", // Darker hover background for table headers
-  },
   td: {
     backgroundColor: "#444",
     padding: "12px 20px",
     textAlign: "center",
     fontSize: "14px",
     color: "#fff",
-    transition: "background-color 0.3s ease", // Smooth transition for row hover
-  },
-  trHover: {
-    backgroundColor: "#555", // Highlight row on hover
   },
   sortButton: {
     background: "none",
@@ -299,28 +301,6 @@ const styles = {
     cursor: "pointer",
     fontSize: "16px",
     transition: "color 0.3s ease",
-  },
-  sortButtonHover: {
-    color: "#00bcd4", // Highlight sort button on hover
-  },
-  arrow: {
-    fontSize: "14px", // Smaller font size for the arrows
-    marginLeft: "5px",
-  },
-  // Optional: Responsive styles for mobile view
-  "@media (max-width: 768px)": {
-    table: {
-      fontSize: "12px",
-    },
-    th: {
-      fontSize: "14px",
-    },
-    td: {
-      fontSize: "12px",
-    },
-    header: {
-      fontSize: "24px",
-    },
   },
 };
 
