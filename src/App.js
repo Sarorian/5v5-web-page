@@ -5,6 +5,7 @@ import HomePage from "./pages/HomePage";
 import PlayersPage from "./pages/PlayersPage/PlayersPage";
 import MatchDetails from "./pages/MatchDetails";
 import PlayerProfile from "./pages/PlayersPage/PlayerProfile"; // Import Player Profile
+import ChampionsPage from "./pages/ChampionsPage"; // Import Champions Page
 
 function App() {
   return (
@@ -16,6 +17,8 @@ function App() {
           <Route path="/players" element={<PlayersPage />} />
           <Route path="/players/:id" element={<PlayerProfile />} />
           <Route path="/matches/:matchId" element={<MatchDetails />} />
+          <Route path="/champions" element={<ChampionsPage />} />{" "}
+          {/* Add the Champions page route */}
         </Routes>
       </div>
     </Router>

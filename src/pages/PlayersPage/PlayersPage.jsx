@@ -13,20 +13,15 @@ const PlayersPage = () => {
         );
         const data = await response.json();
 
-        // Calculate points and KDA for each player
         const playersWithPointsAndKDA = data.map((player) => {
           const wins = player.gamesPlayed.wins;
           const gamesPlayed = wins + player.gamesPlayed.losses;
           const points = gamesPlayed > 0 ? (wins / gamesPlayed) * wins : 0;
-
-          // Calculate KDA
-          const deaths = player.deaths || 1; // Avoid division by zero
+          const deaths = player.deaths || 1;
           const kda = ((player.kills + player.assists) / deaths).toFixed(2);
-
           return { ...player, points, kda };
         });
 
-        // Sort players by points
         const sortedPlayers = playersWithPointsAndKDA.sort(
           (a, b) => b.points - a.points
         );
@@ -46,7 +41,7 @@ const PlayersPage = () => {
 
   return (
     <div style={styles.container}>
-      <h1>Players Leaderboard</h1>
+      <h1 style={styles.title}>🏆 Players Leaderboard</h1>
       {leader && (
         <div
           style={{
@@ -54,68 +49,97 @@ const PlayersPage = () => {
             backgroundImage: `url(${getChampionSplash(
               leader.favoriteChampion
             )})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
           }}
         >
-          <h2 style={styles.leaderText}>
-            🏆 Leader: {leader.fullName} ({leader.riotID})
-          </h2>
-          <p style={styles.leaderText}>Points: {leader.points.toFixed(2)}</p>
-          <p style={styles.leaderText}>
-            KDA: {leader.kda} | Wins: {leader.gamesPlayed.wins}, Losses:{" "}
-            {leader.gamesPlayed.losses}
-          </p>
+          <div style={styles.overlay}>
+            <h2>
+              {leader.fullName} ({leader.riotID})
+            </h2>
+            <p>Points: {leader.points.toFixed(2)}</p>
+            <p>
+              KDA: {leader.kda} | Wins: {leader.gamesPlayed.wins}, Losses:{" "}
+              {leader.gamesPlayed.losses}
+            </p>
+          </div>
         </div>
       )}
-      <h2>All Players</h2>
-      <ul style={styles.list}>
+      <div style={styles.playersContainer}>
         {players.map((player, index) => (
-          <li key={player.riotID} style={styles.listItem}>
+          <div key={player.riotID} style={styles.playerCard}>
             <Link
               to={`/players/${encodeURIComponent(player.riotID)}`}
               style={styles.link}
             >
-              {index + 1}. {player.fullName} ({player.riotID})
+              <h3>
+                #{index + 1} {player.fullName}
+              </h3>
             </Link>
-            - Points: {player.points.toFixed(2)} | KDA: {player.kda} | Wins:{" "}
-            {player.gamesPlayed.wins} | Losses: {player.gamesPlayed.losses}
-          </li>
+            <p>Points: {player.points.toFixed(2)}</p>
+            <p>KDA: {player.kda}</p>
+            <p>
+              Wins: {player.gamesPlayed.wins} | Losses:{" "}
+              {player.gamesPlayed.losses}
+            </p>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 };
 
 const styles = {
   container: {
-    padding: "20px",
+    padding: "40px 20px",
     textAlign: "center",
-    color: "#fff",
-    backgroundColor: "#222",
+    background: "linear-gradient(to right, #141E30, #243B55)",
     minHeight: "100vh",
+    color: "#fff",
+  },
+  title: {
+    fontSize: "2.5rem",
+    fontWeight: "bold",
+    marginBottom: "20px",
   },
   leaderCard: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Overlay to make text readable
+    position: "relative",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    borderRadius: "15px",
+    padding: "30px",
+    textAlign: "center",
+    boxShadow: "0px 10px 30px rgba(0, 0, 0, 0.2)",
+    marginBottom: "30px",
+  },
+  overlay: {
+    background: "rgba(0, 0, 0, 0.7)",
+    borderRadius: "15px",
+    padding: "20px",
+    color: "#fff",
+  },
+  playersContainer: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+    gap: "20px",
+    justifyContent: "center",
+  },
+  playerCard: {
+    background: "rgba(255, 255, 255, 0.1)",
     padding: "15px",
     borderRadius: "10px",
-    marginBottom: "20px",
-    display: "inline-block",
-    width: "100%",
     textAlign: "center",
+    backdropFilter: "blur(5px)",
+    transition: "0.3s",
+    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.3)",
   },
-  leaderText: {
-    color: "#fff",
-    textShadow: "2px 2px 4px #000000", // Black text outline
+  playerCardHover: {
+    transform: "scale(1.05)",
   },
-  list: { listStyleType: "none", padding: 0 },
-  listItem: {
-    backgroundColor: "#333",
-    padding: "10px",
-    borderRadius: "5px",
-    marginBottom: "5px",
+  link: {
+    color: "#FFD700",
+    textDecoration: "none",
+    fontWeight: "bold",
+    transition: "0.3s",
   },
-  link: { color: "#1e90ff", textDecoration: "none", fontWeight: "bold" },
 };
 
 export default PlayersPage;

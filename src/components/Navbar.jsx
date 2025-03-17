@@ -15,6 +15,11 @@ const Navbar = () => {
             Players
           </Link>
         </li>
+        <li style={styles.navItem}>
+          <Link to="/champions" style={styles.link}>
+            Champions
+          </Link>
+        </li>
       </ul>
     </nav>
   );

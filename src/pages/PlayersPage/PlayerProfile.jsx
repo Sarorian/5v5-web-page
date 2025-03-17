@@ -7,6 +7,7 @@ const PlayerProfile = () => {
   const [matches, setMatches] = useState([]); // Store match history
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [championNames, setChampionNames] = useState({}); // Store champion names
 
   useEffect(() => {
     const fetchPlayerData = async () => {
@@ -29,11 +30,58 @@ const PlayerProfile = () => {
           throw new Error(`API error: ${matchesResponse.status}`);
         const matchesData = await matchesResponse.json();
 
+        const fetchPatch = async () => {
+          const url = "https://ddragon.leagueoflegends.com/api/versions.json";
+          try {
+            const response = await fetch(url);
+            const data = await response.json();
+            return data[0]; // Return the latest patch version
+          } catch (error) {
+            console.error("Error fetching patches:", error);
+          }
+        };
+
+        const idToName = async (championId, patch) => {
+          const url = `https://ddragon.leagueoflegends.com/cdn/${patch}/data/en_US/champion.json`;
+          try {
+            const response = await fetch(url);
+            const data = await response.json();
+            const champions = data.data; // Get the champions data
+
+            if (champions[championId]) {
+              return champions[championId].name;
+            } else {
+              console.error("Champion ID not found");
+              return null;
+            }
+          } catch (error) {
+            console.error("Error fetching champion data:", error);
+            return null;
+          }
+        };
+
+        const patch = await fetchPatch();
+
+        // Fetch all champions' names and store them
+        const allChampionNames = {};
+        const championIds = [
+          ...Object.keys(playerData.championsPlayed || {}),
+          ...Object.keys(playerData.rolesPlayed || {}),
+        ];
+
+        for (let championId of championIds) {
+          const name = await idToName(championId, patch);
+          if (name) {
+            allChampionNames[championId] = name;
+          }
+        }
+
         console.log("Fetched player:", playerData);
         console.log("Fetched matches:", matchesData);
 
         setPlayer(playerData);
         setMatches(matchesData);
+        setChampionNames(allChampionNames);
         setLoading(false);
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -75,17 +123,20 @@ const PlayerProfile = () => {
   const winrate = ((wins / totalGames) * 100).toFixed(2);
 
   // Find most common role
+  // Find most common role
   const mostCommonRole = Object.entries(player.rolesPlayed || [])
     .sort((a, b) => b[1].wins + b[1].losses - (a[1].wins + a[1].losses))
     .shift();
-  const mostCommonRoleName = mostCommonRole ? mostCommonRole[0] : "N/A";
+  const mostCommonRoleName = mostCommonRole
+    ? mostCommonRole[0].toUpperCase()
+    : "N/A"; // Capitalizing the role name
 
   // Find most common champion
   const mostCommonChampion = Object.entries(player.championsPlayed || [])
     .sort((a, b) => b[1].wins + b[1].losses - (a[1].wins + a[1].losses))
     .shift();
   const mostCommonChampionName = mostCommonChampion
-    ? mostCommonChampion[0]
+    ? championNames[mostCommonChampion[0]] || mostCommonChampion[0]
     : "N/A";
 
   // Find winrate as captain
@@ -134,9 +185,6 @@ const PlayerProfile = () => {
           </div>
         </div>
       </div>
-      <p style={styles.profileText}>
-        <strong>Favorite Champion:</strong> {player.favoriteChampion || "N/A"}
-      </p>
       <h2 style={styles.profileText}>Match History</h2>
       <ul style={styles.list}>
         {matches.length > 0 ? (
@@ -149,6 +197,8 @@ const PlayerProfile = () => {
             const isWin = match.winningTeam.some(
               (p) => p.playerName === player.gameName
             );
+            const championName =
+              championNames[playerData.champion] || playerData.champion; // Get champion name
             return (
               <li
                 key={match._id}
@@ -158,16 +208,15 @@ const PlayerProfile = () => {
                 }}
               >
                 <strong>{isWin ? "Victory 🏆" : "Defeat ❌"}</strong> -{" "}
-                {playerData.champion}
+                {championName}
                 <p>
                   KDA: {playerData.kills} / {playerData.deaths} /{" "}
                   {playerData.assists}
                 </p>
-                {/* Link to the match details */}
                 <Link
                   to={`/matches/${match._id}?player=${encodeURIComponent(
                     player.riotID
-                  )}`} // Add player's gameName to the link
+                  )}`}
                   style={styles.link}
                 >
                   View Match Details
@@ -181,8 +230,9 @@ const PlayerProfile = () => {
       </ul>
       <h2 style={styles.profileText}>Champion Stats</h2>
       <ul style={styles.list}>
-        {Object.entries(player.championsPlayed || {}).map(
-          ([champion, stats]) => {
+        {Object.entries(player.championsPlayed || {})
+          .sort((a, b) => b[1].wins + b[1].losses - (a[1].wins + a[1].losses))
+          .map(([championId, stats]) => {
             const totalChampionGames = stats.wins + stats.losses;
             const championWinrate = totalChampionGames
               ? ((stats.wins / totalChampionGames) * 100).toFixed(2)
@@ -191,35 +241,39 @@ const PlayerProfile = () => {
               (stats.kills + stats.assists) /
               stats.deaths
             ).toFixed(2);
+            const championName = championNames[championId] || championId; // Get champion name
             return (
-              <li key={champion} style={styles.listItem}>
-                <strong>{champion}</strong>
+              <li key={championId} style={styles.listItem}>
+                <strong>{championName}</strong>
                 <p>
                   Games Played: {totalChampionGames}, Winrate: {championWinrate}
                   %, KDA: {championKDA}
                 </p>
               </li>
             );
-          }
-        )}
+          })}
       </ul>
+
       <h2 style={styles.profileText}>Role Stats</h2>
       <ul style={styles.list}>
-        {Object.entries(player.rolesPlayed || {}).map(([role, stats]) => {
-          const roleGamesPlayed = stats.wins + stats.losses;
-          const roleWinrate = roleGamesPlayed
-            ? ((stats.wins / roleGamesPlayed) * 100).toFixed(2)
-            : 0;
-          return (
-            <li key={role} style={styles.listItem}>
-              <strong>{role.toUpperCase()}</strong>
-              <p>
-                Games Played: {roleGamesPlayed}, Winrate: {roleWinrate}%
-              </p>
-            </li>
-          );
-        })}
+        {Object.entries(player.rolesPlayed || {})
+          .sort((a, b) => b[1].wins + b[1].losses - (a[1].wins + a[1].losses))
+          .map(([role, stats]) => {
+            const roleGamesPlayed = stats.wins + stats.losses;
+            const roleWinrate = roleGamesPlayed
+              ? ((stats.wins / roleGamesPlayed) * 100).toFixed(2)
+              : 0;
+            return (
+              <li key={role} style={styles.listItem}>
+                <strong>{role.toUpperCase()}</strong>
+                <p>
+                  Games Played: {roleGamesPlayed}, Winrate: {roleWinrate}%
+                </p>
+              </li>
+            );
+          })}
       </ul>
+
       <Link to="/players" style={styles.link}>
         Back to Leaderboard
       </Link>
