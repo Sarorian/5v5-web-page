@@ -240,33 +240,87 @@ const ChampionsPage = () => {
 
 const styles = {
   container: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center", // Centers the content horizontally
+    justifyContent: "center", // Centers the content vertically
     padding: "20px",
     backgroundColor: "#222",
     color: "#fff",
+    borderRadius: "8px",
+    boxShadow: "0px 4px 15px rgba(0, 0, 0, 0.3)",
+    maxWidth: "1200px",
+    margin: "auto", // Center the container horizontally
+    minHeight: "100vh", // Ensure the container takes up full viewport height
   },
   header: {
-    fontSize: "24px",
+    fontSize: "28px",
     fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: "20px",
+    color: "#00bcd4", // Accent color for the header
   },
   table: {
     width: "100%",
     borderCollapse: "collapse",
-    marginTop: "20px",
+    backgroundColor: "#333",
+    borderRadius: "8px", // Rounded corners for the table
+    overflow: "hidden",
+    boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)", // Table shadow for depth
   },
   th: {
-    backgroundColor: "#333",
-    padding: "10px",
-    textAlign: "left",
+    backgroundColor: "#444",
+    color: "#fff",
+    padding: "12px 20px",
+    textAlign: "center",
+    fontSize: "16px",
+    fontWeight: "bold",
+    cursor: "pointer",
+    transition: "background-color 0.3s ease",
+  },
+  thHover: {
+    backgroundColor: "#555", // Darker hover background for table headers
   },
   td: {
-    padding: "10px",
-    textAlign: "left",
+    backgroundColor: "#444",
+    padding: "12px 20px",
+    textAlign: "center",
+    fontSize: "14px",
+    color: "#fff",
+    transition: "background-color 0.3s ease", // Smooth transition for row hover
+  },
+  trHover: {
+    backgroundColor: "#555", // Highlight row on hover
   },
   sortButton: {
     background: "none",
     border: "none",
     color: "#fff",
     cursor: "pointer",
+    fontSize: "16px",
+    transition: "color 0.3s ease",
+  },
+  sortButtonHover: {
+    color: "#00bcd4", // Highlight sort button on hover
+  },
+  arrow: {
+    fontSize: "14px", // Smaller font size for the arrows
+    marginLeft: "5px",
+  },
+  // Optional: Responsive styles for mobile view
+  "@media (max-width: 768px)": {
+    table: {
+      fontSize: "12px",
+    },
+    th: {
+      fontSize: "14px",
+    },
+    td: {
+      fontSize: "12px",
+    },
+    header: {
+      fontSize: "24px",
+    },
   },
 };
 
