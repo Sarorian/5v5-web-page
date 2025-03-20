@@ -4,36 +4,109 @@ import { Link } from "react-router-dom";
 const PlayersPage = () => {
   const [players, setPlayers] = useState([]);
   const [leader, setLeader] = useState(null);
+  const [seasons, setSeasons] = useState([]);
+  const [selectedSeason, setSelectedSeason] = useState(0);
 
   useEffect(() => {
-    const fetchPlayers = async () => {
+    const fetchMatchesAndPlayers = async () => {
       try {
-        const response = await fetch(
+        const matchesResponse = await fetch(
+          "https://lobsterapi-f663d2b5d447.herokuapp.com/api/matches"
+        );
+        const allMatches = await matchesResponse.json();
+
+        // Group matches into seasons (50 games per season)
+        let seasons = [];
+        for (let i = 0; i < allMatches.length; i += 50) {
+          seasons.push(allMatches.slice(i, i + 50));
+        }
+
+        seasons.reverse(); // Reverse so season 0 is the latest
+        setSeasons(seasons);
+        setSelectedSeason(0); // Default to the latest season
+
+        console.log("Reversed Seasons:", seasons);
+
+        // Fetch all players
+        const playersResponse = await fetch(
           "https://lobsterapi-f663d2b5d447.herokuapp.com/api/players"
         );
-        const data = await response.json();
+        const playersData = await playersResponse.json();
 
-        const playersWithPointsAndKDA = data.map((player) => {
-          const wins = player.gamesPlayed.wins;
-          const gamesPlayed = wins + player.gamesPlayed.losses;
-          const points = gamesPlayed > 0 ? (wins / gamesPlayed) * wins : 0;
-          const deaths = player.deaths || 1;
-          const kda = ((player.kills + player.assists) / deaths).toFixed(2);
-          return { ...player, points, kda };
-        });
-
-        const sortedPlayers = playersWithPointsAndKDA.sort(
-          (a, b) => b.points - a.points
+        // Filter player stats based on the latest season
+        const filteredPlayers = calculateSeasonStats(
+          playersData,
+          seasons[0] || []
         );
-        setPlayers(sortedPlayers);
-        setLeader(sortedPlayers[0] || null);
+        setPlayers(filteredPlayers);
+        setLeader(filteredPlayers[0] || null);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchMatchesAndPlayers();
+  }, []);
+
+  useEffect(() => {
+    if (seasons.length === 0) return;
+    const fetchPlayers = async () => {
+      try {
+        const playersResponse = await fetch(
+          "https://lobsterapi-f663d2b5d447.herokuapp.com/api/players"
+        );
+        const playersData = await playersResponse.json();
+        const filteredPlayers = calculateSeasonStats(
+          playersData,
+          seasons[selectedSeason] || []
+        );
+        setPlayers(filteredPlayers);
+        setLeader(filteredPlayers[0] || null);
       } catch (error) {
         console.error("Error fetching players:", error);
       }
     };
 
     fetchPlayers();
-  }, []);
+  }, [selectedSeason, seasons]);
+
+  const calculateSeasonStats = (playersData, seasonMatches) => {
+    return playersData
+      .map((player) => {
+        let wins = 0,
+          losses = 0,
+          kills = 0,
+          deaths = 0,
+          assists = 0;
+
+        for (const match of seasonMatches) {
+          const playerMatchData = [
+            ...match.winningTeam,
+            ...match.losingTeam,
+          ].find((p) => p.playerName === player.gameName);
+          if (!playerMatchData) continue;
+
+          if (match.winningTeam.some((p) => p.playerName === player.gameName)) {
+            wins += 1;
+          } else {
+            losses += 1;
+          }
+          kills += playerMatchData.kills;
+          deaths += playerMatchData.deaths;
+          assists += playerMatchData.assists;
+        }
+
+        const gamesPlayed = wins + losses;
+        const points = gamesPlayed > 0 ? (wins / gamesPlayed) * wins : 0;
+        const kda =
+          deaths > 0
+            ? ((kills + assists) / deaths).toFixed(2)
+            : kills + assists;
+
+        return { ...player, wins, losses, kills, deaths, assists, points, kda };
+      })
+      .sort((a, b) => b.points - a.points);
+  };
 
   const getChampionSplash = (championName) => {
     return `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${championName}_0.jpg`;
@@ -42,6 +115,19 @@ const PlayersPage = () => {
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>🏆 Players Leaderboard</h1>
+
+      {/* Season Dropdown */}
+      <select
+        onChange={(e) => setSelectedSeason(parseInt(e.target.value))}
+        style={styles.dropdown}
+      >
+        {seasons.map((_, index) => (
+          <option key={index} value={index}>
+            Season {seasons.length - index}
+          </option>
+        ))}
+      </select>
+
       {leader && (
         <div
           style={{
@@ -57,12 +143,12 @@ const PlayersPage = () => {
             </h2>
             <p>Points: {leader.points.toFixed(2)}</p>
             <p>
-              KDA: {leader.kda} | Wins: {leader.gamesPlayed.wins}, Losses:{" "}
-              {leader.gamesPlayed.losses}
+              KDA: {leader.kda} | Wins: {leader.wins}, Losses: {leader.losses}
             </p>
           </div>
         </div>
       )}
+
       <div style={styles.playersContainer}>
         {players.map((player, index) => (
           <div key={player.riotID} style={styles.playerCard}>
@@ -77,8 +163,7 @@ const PlayersPage = () => {
             <p>Points: {player.points.toFixed(2)}</p>
             <p>KDA: {player.kda}</p>
             <p>
-              Wins: {player.gamesPlayed.wins} | Losses:{" "}
-              {player.gamesPlayed.losses}
+              Wins: {player.wins} | Losses: {player.losses}
             </p>
           </div>
         ))}
@@ -99,6 +184,12 @@ const styles = {
     fontSize: "2.5rem",
     fontWeight: "bold",
     marginBottom: "20px",
+  },
+  dropdown: {
+    padding: "10px",
+    fontSize: "1rem",
+    marginBottom: "20px",
+    borderRadius: "5px",
   },
   leaderCard: {
     position: "relative",
@@ -130,9 +221,6 @@ const styles = {
     backdropFilter: "blur(5px)",
     transition: "0.3s",
     boxShadow: "0 4px 10px rgba(0, 0, 0, 0.3)",
-  },
-  playerCardHover: {
-    transform: "scale(1.05)",
   },
   link: {
     color: "#FFD700",
