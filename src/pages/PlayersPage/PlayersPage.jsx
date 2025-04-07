@@ -128,6 +128,11 @@ const PlayersPage = () => {
         ))}
       </select>
 
+      {/* Games Played for selected season */}
+      <p style={{ marginBottom: "20px" }}>
+        Games Played: {seasons[selectedSeason]?.length || 0}
+      </p>
+
       {leader && (
         <div
           style={{
