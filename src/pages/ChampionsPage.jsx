@@ -145,6 +145,17 @@ const ChampionsPage = () => {
     }
   };
 
+  const getWinRateColor = (winRate) => {
+    // Clamp between 0 and 100
+    const clamped = Math.max(0, Math.min(100, winRate));
+
+    // Convert to hue (0 = red, 120 = green)
+    // 0% winrate = hue 0 (red), 50% = yellow (60), 100% = green (120)
+    const hue = (clamped / 100) * 120;
+
+    return `hsl(${hue}, 100%, 50%)`;
+  };
+
   return (
     <div style={styles.container}>
       <h1 style={styles.header}>Champions Stats</h1>
@@ -220,24 +231,23 @@ const ChampionsPage = () => {
             const banRate = calculateBanRate(champion.bans, totalGames);
 
             return (
-              <tr key={champion._id}>
-                <td>
+              <tr key={champion._id} style={styles.row}>
+                <td style={{ ...styles.td, ...styles.nameCell }}>
                   <img
                     src={`https://ddragon.leagueoflegends.com/cdn/15.5.1/img/champion/${champion.name}.png`}
-                    alt={`${champion.name} icon`}
-                    style={{
-                      width: "30px",
-                      height: "30px",
-                      marginRight: "10px",
-                    }}
+                    alt={champion.name}
+                    style={styles.icon}
                   />
                   {champion.name}
                 </td>
-                <td>{presence}%</td>
-                <td>{winRate}%</td>
-                <td>{pickRate}%</td>
-                <td>{banRate}%</td>
-                <td>{totalGamesPlayed}</td>
+                <td style={styles.td}>{presence}%</td>
+                <td style={{ ...styles.td, color: getWinRateColor(winRate) }}>
+                  {winRate}%
+                </td>
+
+                <td style={styles.td}>{pickRate}%</td>
+                <td style={styles.td}>{banRate}%</td>
+                <td style={styles.td}>{totalGamesPlayed}</td>
               </tr>
             );
           })}
@@ -249,21 +259,15 @@ const ChampionsPage = () => {
 
 const styles = {
   container: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
     padding: "20px",
-    backgroundColor: "#222",
+    backgroundColor: "#1c1c1c",
     color: "#fff",
-    borderRadius: "8px",
-    boxShadow: "0px 4px 15px rgba(0, 0, 0, 0.3)",
     maxWidth: "1200px",
     margin: "auto",
     minHeight: "100vh",
   },
   header: {
-    fontSize: "28px",
+    fontSize: "32px",
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: "20px",
@@ -272,36 +276,58 @@ const styles = {
   table: {
     width: "100%",
     borderCollapse: "collapse",
-    backgroundColor: "#333",
-    borderRadius: "8px",
-    overflow: "hidden",
-    boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
-  },
-  th: {
-    backgroundColor: "#444",
-    color: "#fff",
-    padding: "12px 20px",
+    borderSpacing: "0",
     textAlign: "center",
-    fontSize: "16px",
-    fontWeight: "bold",
-    cursor: "pointer",
-    transition: "background-color 0.3s ease",
-  },
-  td: {
-    backgroundColor: "#444",
-    padding: "12px 20px",
-    textAlign: "center",
-    fontSize: "14px",
-    color: "#fff",
   },
   sortButton: {
     background: "none",
     border: "none",
-    color: "#fff",
+    color: "#00bcd4",
     cursor: "pointer",
     fontSize: "16px",
-    transition: "color 0.3s ease",
+    fontWeight: "bold",
   },
+  th: {
+    padding: "12px 16px",
+    backgroundColor: "#444",
+    color: "#fff",
+    fontSize: "16px",
+    fontWeight: "600",
+    textAlign: "center",
+    borderBottom: "2px solid #555",
+    position: "sticky",
+    top: 0,
+    zIndex: 1,
+  },
+  td: {
+    padding: "12px 16px",
+    backgroundColor: "#333",
+    color: "#fff",
+    fontSize: "14px",
+    textAlign: "center",
+    borderBottom: "1px solid #444",
+    verticalAlign: "middle",
+  },
+  row: {
+    transition: "background-color 0.3s",
+  },
+  rowHover: {
+    backgroundColor: "#383838",
+  },
+  icon: {
+    width: "32px",
+    height: "32px",
+    marginRight: "10px",
+    verticalAlign: "middle",
+    borderRadius: "4px",
+  },
+  nameCell: {
+    display: "flex",
+    alignItems: "center",
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  transition: "color 0.3s ease-in-out",
 };
 
 export default ChampionsPage;

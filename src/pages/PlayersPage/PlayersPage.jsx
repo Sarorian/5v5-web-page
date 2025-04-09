@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 
 const PlayersPage = () => {
   const [players, setPlayers] = useState([]);
+  const [allMatches, setAllMatches] = useState([]);
+
   const [leader, setLeader] = useState(null);
   const [seasons, setSeasons] = useState([]);
-  const [selectedSeason, setSelectedSeason] = useState(0);
+  const [selectedSeason, setSelectedSeason] = useState(null);
 
   useEffect(() => {
     const fetchMatchesAndPlayers = async () => {
@@ -40,6 +42,7 @@ const PlayersPage = () => {
         );
         setPlayers(filteredPlayers);
         setLeader(filteredPlayers[0] || null);
+        setAllMatches(allMatches);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -49,17 +52,19 @@ const PlayersPage = () => {
   }, []);
 
   useEffect(() => {
-    if (seasons.length === 0) return;
+    if (seasons.length === 0 && selectedSeason !== -1) return;
+
     const fetchPlayers = async () => {
       try {
         const playersResponse = await fetch(
           "https://lobsterapi-f663d2b5d447.herokuapp.com/api/players"
         );
         const playersData = await playersResponse.json();
-        const filteredPlayers = calculateSeasonStats(
-          playersData,
-          seasons[selectedSeason] || []
-        );
+
+        const matchesToUse =
+          selectedSeason === -1 ? allMatches : seasons[selectedSeason] || [];
+
+        const filteredPlayers = calculateSeasonStats(playersData, matchesToUse);
         setPlayers(filteredPlayers);
         setLeader(filteredPlayers[0] || null);
       } catch (error) {
@@ -68,7 +73,7 @@ const PlayersPage = () => {
     };
 
     fetchPlayers();
-  }, [selectedSeason, seasons]);
+  }, [selectedSeason, seasons, allMatches]);
 
   const calculateSeasonStats = (playersData, seasonMatches) => {
     return playersData
@@ -118,19 +123,24 @@ const PlayersPage = () => {
 
       {/* Season Dropdown */}
       <select
+        value={selectedSeason} // <-- Add this
         onChange={(e) => setSelectedSeason(parseInt(e.target.value))}
         style={styles.dropdown}
       >
+        <option value={-1}>Overall (All Seasons)</option>
         {seasons.map((_, index) => (
           <option key={index} value={index}>
-            Season {seasons.length - index}
+            Season {seasons.length - index} {/* Reverse numbered for display */}
           </option>
         ))}
       </select>
 
       {/* Games Played for selected season */}
       <p style={{ marginBottom: "20px" }}>
-        Games Played: {seasons[selectedSeason]?.length || 0}
+        Games Played:{" "}
+        {selectedSeason === -1
+          ? allMatches.length
+          : seasons[selectedSeason]?.length || 0}
       </p>
 
       {leader && (
