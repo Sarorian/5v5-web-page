@@ -8,8 +8,24 @@ const PlayerProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [championNames, setChampionNames] = useState({}); // Store champion names
+  const [patchVersion, setPatchVersion] = useState("1.15.7");
 
   useEffect(() => {
+    const fetchPatchVersion = async () => {
+      try {
+        const response = await fetch(
+          "https://ddragon.leagueoflegends.com/api/versions.json"
+        );
+        const data = await response.json();
+        if (data && data.length > 0) {
+          setPatchVersion(data[0]); // Latest patch
+        }
+      } catch (error) {
+        console.error("Error fetching patch version:", error);
+      }
+    };
+
+    fetchPatchVersion();
     const fetchPlayerData = async () => {
       try {
         const encodedID = encodeURIComponent(id);
@@ -185,94 +201,137 @@ const PlayerProfile = () => {
           </div>
         </div>
       </div>
-      <h2 style={styles.profileText}>Match History</h2>
-      <ul style={styles.list}>
-        {matches.length > 0 ? (
-          matches.map((match) => {
-            const playerData = [...match.winningTeam, ...match.losingTeam].find(
-              (p) => p.playerName === player.gameName
-            );
-            if (!playerData) return null;
+      <div style={styles.flexContainer}>
+        <div style={styles.sideColumn}>
+          <h2 style={styles.profileText}>Champion Stats</h2>
+          <ul style={styles.championStatsList}>
+            {Object.entries(player.championsPlayed || {})
+              .sort(
+                (a, b) => b[1].wins + b[1].losses - (a[1].wins + a[1].losses)
+              )
+              .map(([championId, stats]) => {
+                const totalGames = stats.wins + stats.losses;
+                const winRate = totalGames
+                  ? ((stats.wins / totalGames) * 100).toFixed(0)
+                  : 0;
+                const kda = (
+                  (stats.kills + stats.assists) /
+                  Math.max(stats.deaths, 1)
+                ).toFixed(2);
+                const avgCS = stats.cs ? (stats.cs / totalGames).toFixed(1) : 0;
+                const championName = championNames[championId] || championId;
+                const kdaColor =
+                  kda >= 5
+                    ? "#E17E00"
+                    : kda >= 3
+                    ? "#00AEEF"
+                    : kda >= 2
+                    ? "#00C851"
+                    : "#D9534F";
 
-            const isWin = match.winningTeam.some(
-              (p) => p.playerName === player.gameName
-            );
-            const championName =
-              championNames[playerData.champion] || playerData.champion; // Get champion name
-            return (
-              <li
-                key={match._id}
-                style={{
-                  ...styles.listItem,
-                  backgroundColor: isWin ? "#228B22" : "#8B0000",
-                }}
-              >
-                <strong>{isWin ? "Victory 🏆" : "Defeat ❌"}</strong> -{" "}
-                {championName}
-                <p>
-                  KDA: {playerData.kills} / {playerData.deaths} /{" "}
-                  {playerData.assists}
-                </p>
-                <Link
-                  to={`/matches/${match._id}?player=${encodeURIComponent(
-                    player.riotID
-                  )}`}
-                  style={styles.link}
-                >
-                  View Match Details
-                </Link>
-              </li>
-            );
-          })
-        ) : (
-          <p>No matches found for {player.fullName}.</p>
-        )}
-      </ul>
-      <h2 style={styles.profileText}>Champion Stats</h2>
-      <ul style={styles.list}>
-        {Object.entries(player.championsPlayed || {})
-          .sort((a, b) => b[1].wins + b[1].losses - (a[1].wins + a[1].losses))
-          .map(([championId, stats]) => {
-            const totalChampionGames = stats.wins + stats.losses;
-            const championWinrate = totalChampionGames
-              ? ((stats.wins / totalChampionGames) * 100).toFixed(2)
-              : 0;
-            const championKDA = (
-              (stats.kills + stats.assists) /
-              stats.deaths
-            ).toFixed(2);
-            const championName = championNames[championId] || championId; // Get champion name
-            return (
-              <li key={championId} style={styles.listItem}>
-                <strong>{championName}</strong>
-                <p>
-                  Games Played: {totalChampionGames}, Winrate: {championWinrate}
-                  %, KDA: {championKDA}
-                </p>
-              </li>
-            );
-          })}
-      </ul>
+                return (
+                  <li key={championId} style={styles.championRow}>
+                    <div style={styles.championLeft}>
+                      <img
+                        src={`https://ddragon.leagueoflegends.com/cdn/${patchVersion}/img/champion/${championId}.png`}
+                        alt={championName}
+                        style={styles.championIcon}
+                      />
+                      <div>
+                        <div style={styles.championName}>{championName}</div>
+                      </div>
+                    </div>
 
-      <h2 style={styles.profileText}>Role Stats</h2>
-      <ul style={styles.list}>
-        {Object.entries(player.rolesPlayed || {})
-          .sort((a, b) => b[1].wins + b[1].losses - (a[1].wins + a[1].losses))
-          .map(([role, stats]) => {
-            const roleGamesPlayed = stats.wins + stats.losses;
-            const roleWinrate = roleGamesPlayed
-              ? ((stats.wins / roleGamesPlayed) * 100).toFixed(2)
-              : 0;
-            return (
-              <li key={role} style={styles.listItem}>
-                <strong>{role.toUpperCase()}</strong>
-                <p>
-                  Games Played: {roleGamesPlayed}, Winrate: {roleWinrate}%
-                </p>
-              </li>
-            );
-          })}
-      </ul>
+                    <div style={styles.kdaSection}>
+                      <div style={{ ...styles.kdaText, color: kdaColor }}>
+                        {kda}:1 KDA
+                      </div>
+                      <div style={styles.kdaDetails}>
+                        {stats.kills} / {stats.deaths} / {stats.assists}
+                      </div>
+                    </div>
+
+                    <div style={styles.winrateSection}>
+                      <div>{winRate}%</div>
+                      <div style={styles.gamesText}>{totalGames} Games</div>
+                    </div>
+                  </li>
+                );
+              })}
+          </ul>
+        </div>
+
+        <div style={styles.centerColumn}>
+          <h2 style={styles.profileText}>Match History</h2>
+          <ul style={styles.list}>
+            {matches.length > 0 ? (
+              matches.map((match) => {
+                const playerData = [
+                  ...match.winningTeam,
+                  ...match.losingTeam,
+                ].find((p) => p.playerName === player.gameName);
+                if (!playerData) return null;
+
+                const isWin = match.winningTeam.some(
+                  (p) => p.playerName === player.gameName
+                );
+                const championName =
+                  championNames[playerData.champion] || playerData.champion;
+                return (
+                  <li
+                    key={match._id}
+                    style={{
+                      ...styles.listItem,
+                      backgroundColor: isWin ? "#228B22" : "#8B0000",
+                    }}
+                  >
+                    <strong>{isWin ? "Victory 🏆" : "Defeat ❌"}</strong> -{" "}
+                    {championName}
+                    <p>
+                      KDA: {playerData.kills} / {playerData.deaths} /{" "}
+                      {playerData.assists}
+                    </p>
+                    <Link
+                      to={`/matches/${match._id}?player=${encodeURIComponent(
+                        player.riotID
+                      )}`}
+                      style={styles.link}
+                    >
+                      View Match Details
+                    </Link>
+                  </li>
+                );
+              })
+            ) : (
+              <p>No matches found for {player.fullName}.</p>
+            )}
+          </ul>
+        </div>
+
+        <div style={styles.sideColumn}>
+          <h2 style={styles.profileText}>Role Stats</h2>
+          <ul style={styles.list}>
+            {Object.entries(player.rolesPlayed || {})
+              .sort(
+                (a, b) => b[1].wins + b[1].losses - (a[1].wins + a[1].losses)
+              )
+              .map(([role, stats]) => {
+                const roleGamesPlayed = stats.wins + stats.losses;
+                const roleWinrate = roleGamesPlayed
+                  ? ((stats.wins / roleGamesPlayed) * 100).toFixed(2)
+                  : 0;
+                return (
+                  <li key={role} style={styles.listItem}>
+                    <strong>{role.toUpperCase()}</strong>
+                    <p>
+                      Games Played: {roleGamesPlayed}, Winrate: {roleWinrate}%
+                    </p>
+                  </li>
+                );
+              })}
+          </ul>
+        </div>
+      </div>
 
       <Link to="/players" style={styles.link}>
         Back to Leaderboard
@@ -336,6 +395,88 @@ const styles = {
     marginBottom: "5px",
   },
   link: { color: "#1e90ff", textDecoration: "none", fontWeight: "bold" },
+  flexContainer: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "20px",
+    marginTop: "30px",
+    flexWrap: "wrap", // optional for responsiveness
+  },
+
+  centerColumn: {
+    flex: 2,
+    minWidth: "300px",
+  },
+
+  sideColumn: {
+    flex: 1,
+    minWidth: "250px",
+  },
+  championStatsList: {
+    listStyle: "none",
+    padding: 0,
+    margin: 0,
+  },
+
+  championRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "12px 16px",
+    backgroundColor: "#2e2e3a",
+    marginBottom: "8px",
+    borderRadius: "8px",
+    color: "#fff",
+  },
+
+  championLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+  },
+
+  championIcon: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "50%",
+    objectFit: "cover",
+  },
+
+  championName: {
+    fontWeight: "bold",
+    fontSize: "16px",
+  },
+
+  csText: {
+    fontSize: "13px",
+    color: "#ccc",
+  },
+
+  kdaSection: {
+    textAlign: "center",
+  },
+
+  kdaText: {
+    fontWeight: "bold",
+    fontSize: "15px",
+  },
+
+  kdaDetails: {
+    fontSize: "13px",
+    color: "#bbb",
+  },
+
+  winrateSection: {
+    textAlign: "right",
+    fontSize: "13px",
+    color: "#bbb",
+  },
+
+  gamesText: {
+    fontSize: "12px",
+    color: "#888",
+  },
 };
 
 export default PlayerProfile;
