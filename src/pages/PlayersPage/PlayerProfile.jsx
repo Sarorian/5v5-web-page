@@ -96,7 +96,7 @@ const PlayerProfile = () => {
         console.log("Fetched matches:", matchesData);
 
         setPlayer(playerData);
-        setMatches(matchesData);
+        setMatches(matchesData.reverse());
         setChampionNames(allChampionNames);
         setLoading(false);
       } catch (err) {
