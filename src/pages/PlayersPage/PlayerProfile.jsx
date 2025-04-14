@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import MatchCard from "../../components/MatchCard";
 
 const PlayerProfile = () => {
   const { id } = useParams(); // Get Riot ID from URL
@@ -420,20 +421,26 @@ const styles = {
   },
 
   championRow: {
-    display: "flex",
-    justifyContent: "space-between",
+    display: "grid",
+    gridTemplateColumns: "auto 1fr 1fr", // icon+name | kda | winrate
     alignItems: "center",
     padding: "12px 16px",
     backgroundColor: "#2e2e3a",
     marginBottom: "8px",
     borderRadius: "8px",
     color: "#fff",
+    columnGap: "20px",
   },
 
   championLeft: {
     display: "flex",
     alignItems: "center",
     gap: "12px",
+    minWidth: "150px", // ensures the name has space
+    maxWidth: "200px", // optional: prevent overly long names from expanding
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis",
   },
 
   championIcon: {
@@ -446,6 +453,7 @@ const styles = {
   championName: {
     fontWeight: "bold",
     fontSize: "16px",
+    wordBreak: "break-word",
   },
 
   csText: {

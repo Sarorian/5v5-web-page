@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import MatchCard from "../components/MatchCard"; // adjust path as needed
 
 const HomePage = () => {
   const [matches, setMatches] = useState([]);
@@ -89,89 +90,14 @@ const HomePage = () => {
     <div style={styles.container}>
       <h1 style={styles.title}>Recent Matches</h1>
       {matches.map((match) => (
-        <div key={match._id} style={styles.matchCard}>
-          <div style={styles.matchHeader}>
-            <span>{match.date}</span>
-            <span>{match.time}</span>
-          </div>
-          <div style={styles.teams}>
-            {/* Winning Team */}
-            <div style={styles.team}>
-              <h3 style={styles.winning}>Winning Team</h3>
-              {match.winningTeam.map((player) => {
-                // Get player info from lookup using playerName
-                const playerInfo = playersLookup[player.playerName];
-                return (
-                  <div key={player.playerName} style={styles.playerRow}>
-                    <img
-                      src={getChampionIcon(player.champion)}
-                      alt={player.champion}
-                      style={styles.icon}
-                      onError={(e) => (e.target.style.display = "none")}
-                    />
-                    <span>
-                      {playerInfo ? (
-                        <Link
-                          to={`/players/${encodeURIComponent(
-                            playerInfo.riotID
-                          )}`}
-                          style={{
-                            color: "#00bcd4",
-                            textDecoration: "none",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {player.playerName}
-                        </Link>
-                      ) : (
-                        <strong>{player.playerName}</strong>
-                      )}{" "}
-                      – {idToName(player.champion)} ({player.kills}/
-                      {player.deaths}/{player.assists})
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-            {/* Losing Team */}
-            <div style={styles.team}>
-              <h3 style={styles.losing}>Losing Team</h3>
-              {match.losingTeam.map((player) => {
-                const playerInfo = playersLookup[player.playerName];
-                return (
-                  <div key={player.playerName} style={styles.playerRow}>
-                    <img
-                      src={getChampionIcon(player.champion)}
-                      alt={player.champion}
-                      style={styles.icon}
-                      onError={(e) => (e.target.style.display = "none")}
-                    />
-                    <span>
-                      {playerInfo ? (
-                        <Link
-                          to={`/players/${encodeURIComponent(
-                            playerInfo.riotID
-                          )}`}
-                          style={{
-                            color: "#00bcd4",
-                            textDecoration: "none",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {player.playerName}
-                        </Link>
-                      ) : (
-                        <strong>{player.playerName}</strong>
-                      )}{" "}
-                      – {idToName(player.champion)} ({player.kills}/
-                      {player.deaths}/{player.assists})
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        <MatchCard
+          key={match._id}
+          match={match}
+          playersLookup={playersLookup}
+          patchVersion={patchVersion}
+          idToName={idToName}
+          getChampionIcon={getChampionIcon}
+        />
       ))}
     </div>
   );
