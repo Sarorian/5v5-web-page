@@ -6,10 +6,9 @@ const HomePage = () => {
   const [playersLookup, setPlayersLookup] = useState({});
   const [loading, setLoading] = useState(true);
   const [patchVersion, setPatchVersion] = useState("15.7.1");
-  const [championNames, setChampionNames] = useState({}); // To store champion names
+  const [championNames, setChampionNames] = useState({});
   const [funStats, setFunStats] = useState({});
 
-  // Fetch the latest patch version
   useEffect(() => {
     const fetchPatchVersion = async () => {
       try {
@@ -18,7 +17,7 @@ const HomePage = () => {
         );
         const data = await response.json();
         if (data && data.length > 0) {
-          setPatchVersion(data[0]); // Set the latest patch version
+          setPatchVersion(data[0]);
         }
       } catch (err) {
         console.error("Failed to fetch patch version:", err);
@@ -28,7 +27,6 @@ const HomePage = () => {
     fetchPatchVersion();
   }, []);
 
-  // Fetch matches and players, and set up player lookup
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -39,17 +37,14 @@ const HomePage = () => {
         const matchesData = await matchesRes.json();
         const playersData = await playersRes.json();
 
-        // Create a players lookup object. Assuming player.gameName is unique.
         const lookup = {};
         playersData.forEach((player) => {
           lookup[player.gameName] = player;
         });
         setPlayersLookup(lookup);
 
-        // Reverse match data to show latest at the top
         setMatches(matchesData.reverse());
 
-        // Fetch and set champion names for the current patch
         fetchChampionNames();
 
         setLoading(false);
@@ -78,26 +73,21 @@ const HomePage = () => {
       const allPlayers = [...match.winningTeam, ...match.losingTeam];
 
       allPlayers.forEach((p) => {
-        // Unique champions
         if (!uniqueChamps[p.playerName]) uniqueChamps[p.playerName] = new Set();
         uniqueChamps[p.playerName].add(p.champion);
 
-        // Game count
         playerGames[p.playerName] = (playerGames[p.playerName] || 0) + 1;
 
-        // Champion usage
         champUsage[p.champion] = (champUsage[p.champion] || 0) + 1;
 
-        // KDA
-        const kda = (p.kills + p.assists) / Math.max(1, p.deaths);
         if (!kdaStats[p.playerName]) {
-          kdaStats[p.playerName] = { totalKDA: 0, games: 0 };
+          kdaStats[p.playerName] = { kills: 0, assists: 0, deaths: 0 };
         }
-        kdaStats[p.playerName].totalKDA += kda;
-        kdaStats[p.playerName].games += 1;
+        kdaStats[p.playerName].kills += p.kills;
+        kdaStats[p.playerName].assists += p.assists;
+        kdaStats[p.playerName].deaths += p.deaths;
       });
 
-      // Win/Loss streaks
       const updateStreaks = (team, isWin) => {
         team.forEach((p) => {
           const name = p.playerName;
@@ -137,12 +127,11 @@ const HomePage = () => {
       updateStreaks(match.losingTeam, false);
     });
 
-    // Final KDA average
     const bestKDA = Object.entries(kdaStats)
-      .map(([name, { totalKDA, games }]) => ({
-        name,
-        avgKDA: (totalKDA / games).toFixed(2),
-      }))
+      .map(([name, { kills, assists, deaths }]) => {
+        const kda = deaths === 0 ? kills + assists : (kills + assists) / deaths;
+        return { name, avgKDA: kda.toFixed(2) };
+      })
       .sort((a, b) => b.avgKDA - a.avgKDA)[0];
 
     const mostUnique = Object.entries(uniqueChamps)
@@ -175,25 +164,22 @@ const HomePage = () => {
     });
   }, [matches]);
 
-  // Fetch champion names using the current patch version
   const fetchChampionNames = async () => {
     const url = `https://ddragon.leagueoflegends.com/cdn/${patchVersion}/data/en_US/champion.json`;
     try {
       const response = await fetch(url);
       const data = await response.json();
-      setChampionNames(data.data); // Set the champions data (ID -> Name)
+      setChampionNames(data.data);
     } catch (error) {
       console.error("Error fetching champion names:", error);
     }
   };
 
-  // Helper function to get champion name by ID
   const idToName = (championId) => {
     const champion = championNames[championId];
-    return champion ? champion.name : championId; // Return the name if found, else return ID
+    return champion ? champion.name : championId;
   };
 
-  // Helper function to get champion icon URL
   const getChampionIcon = (champion) =>
     `https://ddragon.leagueoflegends.com/cdn/${patchVersion}/img/champion/${champion}.png`;
 
@@ -238,11 +224,9 @@ const HomePage = () => {
             <span>{match.time}</span>
           </div>
           <div style={styles.teams}>
-            {/* Winning Team */}
             <div style={styles.team}>
               <h3 style={styles.winning}>Winning Team</h3>
               {match.winningTeam.map((player) => {
-                // Get player info from lookup using playerName
                 const playerInfo = playersLookup[player.playerName];
                 return (
                   <div key={player.playerName} style={styles.playerRow}>
@@ -276,7 +260,6 @@ const HomePage = () => {
                 );
               })}
             </div>
-            {/* Losing Team */}
             <div style={styles.team}>
               <h3 style={styles.losing}>Losing Team</h3>
               {match.losingTeam.map((player) => {
