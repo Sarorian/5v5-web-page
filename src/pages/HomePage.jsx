@@ -7,6 +7,7 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [patchVersion, setPatchVersion] = useState("15.7.1");
   const [championNames, setChampionNames] = useState({}); // To store champion names
+  const [funStats, setFunStats] = useState({});
 
   // Fetch the latest patch version
   useEffect(() => {
@@ -61,6 +62,119 @@ const HomePage = () => {
     fetchData();
   }, [patchVersion]);
 
+  useEffect(() => {
+    if (!matches.length) return;
+
+    const uniqueChamps = {};
+    const playerGames = {};
+    const champUsage = {};
+    const kdaStats = {};
+    const winStreaks = {};
+    const loseStreaks = {};
+
+    let currentStreaks = {};
+
+    matches.forEach((match) => {
+      const allPlayers = [...match.winningTeam, ...match.losingTeam];
+
+      allPlayers.forEach((p) => {
+        // Unique champions
+        if (!uniqueChamps[p.playerName]) uniqueChamps[p.playerName] = new Set();
+        uniqueChamps[p.playerName].add(p.champion);
+
+        // Game count
+        playerGames[p.playerName] = (playerGames[p.playerName] || 0) + 1;
+
+        // Champion usage
+        champUsage[p.champion] = (champUsage[p.champion] || 0) + 1;
+
+        // KDA
+        const kda = (p.kills + p.assists) / Math.max(1, p.deaths);
+        if (!kdaStats[p.playerName]) {
+          kdaStats[p.playerName] = { totalKDA: 0, games: 0 };
+        }
+        kdaStats[p.playerName].totalKDA += kda;
+        kdaStats[p.playerName].games += 1;
+      });
+
+      // Win/Loss streaks
+      const updateStreaks = (team, isWin) => {
+        team.forEach((p) => {
+          const name = p.playerName;
+          const prev = currentStreaks[name] || { type: null, count: 0 };
+
+          if (isWin) {
+            if (prev.type === "win") {
+              prev.count += 1;
+            } else {
+              if (prev.type === "lose") {
+                loseStreaks[name] = Math.max(
+                  loseStreaks[name] || 0,
+                  prev.count
+                );
+              }
+              prev.count = 1;
+              prev.type = "win";
+            }
+            winStreaks[name] = Math.max(winStreaks[name] || 0, prev.count);
+          } else {
+            if (prev.type === "lose") {
+              prev.count += 1;
+            } else {
+              if (prev.type === "win") {
+                winStreaks[name] = Math.max(winStreaks[name] || 0, prev.count);
+              }
+              prev.count = 1;
+              prev.type = "lose";
+            }
+            loseStreaks[name] = Math.max(loseStreaks[name] || 0, prev.count);
+          }
+          currentStreaks[name] = prev;
+        });
+      };
+
+      updateStreaks(match.winningTeam, true);
+      updateStreaks(match.losingTeam, false);
+    });
+
+    // Final KDA average
+    const bestKDA = Object.entries(kdaStats)
+      .map(([name, { totalKDA, games }]) => ({
+        name,
+        avgKDA: (totalKDA / games).toFixed(2),
+      }))
+      .sort((a, b) => b.avgKDA - a.avgKDA)[0];
+
+    const mostUnique = Object.entries(uniqueChamps)
+      .map(([name, champs]) => ({ name, count: champs.size }))
+      .sort((a, b) => b.count - a.count)[0];
+
+    const mostPlayed = Object.entries(playerGames).sort(
+      (a, b) => b[1] - a[1]
+    )[0];
+
+    const mostUsedChamp = Object.entries(champUsage).sort(
+      (a, b) => b[1] - a[1]
+    )[0];
+
+    const longestWinStreak = Object.entries(winStreaks).sort(
+      (a, b) => b[1] - a[1]
+    )[0];
+
+    const longestLoseStreak = Object.entries(loseStreaks).sort(
+      (a, b) => b[1] - a[1]
+    )[0];
+
+    setFunStats({
+      bestKDA,
+      mostUnique,
+      mostPlayed,
+      mostUsedChamp,
+      longestWinStreak,
+      longestLoseStreak,
+    });
+  }, [matches]);
+
   // Fetch champion names using the current patch version
   const fetchChampionNames = async () => {
     const url = `https://ddragon.leagueoflegends.com/cdn/${patchVersion}/data/en_US/champion.json`;
@@ -88,6 +202,35 @@ const HomePage = () => {
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>Recent Matches</h1>
+      <div style={styles.statsCard}>
+        <h2 style={{ color: "#ffca28", marginBottom: "10px" }}>Fun Stats</h2>
+        <ul>
+          <li>
+            🎯 Best KDA: {funStats.bestKDA?.name} ({funStats.bestKDA?.avgKDA})
+          </li>
+          <li>
+            🧠 Most Unique Champions: {funStats.mostUnique?.name} (
+            {funStats.mostUnique?.count})
+          </li>
+          <li>
+            🏆 Most Games Played: {funStats.mostPlayed?.[0]} (
+            {funStats.mostPlayed?.[1]})
+          </li>
+          <li>
+            🔥 Longest Win Streak: {funStats.longestWinStreak?.[0]} (
+            {funStats.longestWinStreak?.[1]})
+          </li>
+          <li>
+            💀 Longest Lose Streak: {funStats.longestLoseStreak?.[0]} (
+            {funStats.longestLoseStreak?.[1]})
+          </li>
+          <li>
+            👑 Most Played Champion: {funStats.mostUsedChamp?.[0]} (
+            {funStats.mostUsedChamp?.[1]} times)
+          </li>
+        </ul>
+      </div>
+
       {matches.map((match) => (
         <div key={match._id} style={styles.matchCard}>
           <div style={styles.matchHeader}>
@@ -246,6 +389,16 @@ const styles = {
     height: "30px",
     borderRadius: "6px",
     flexShrink: 0,
+  },
+  statsCard: {
+    backgroundColor: "#2a2a2a",
+    padding: "15px 20px",
+    borderRadius: "10px",
+    marginBottom: "30px",
+    color: "#eee",
+    fontSize: "1rem",
+    lineHeight: "1.6",
+    boxShadow: "0 3px 8px rgba(0,0,0,0.3)",
   },
 };
 
