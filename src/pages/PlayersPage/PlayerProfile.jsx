@@ -10,6 +10,8 @@ const PlayerProfile = () => {
   const [error, setError] = useState(null);
   const [championNames, setChampionNames] = useState({}); // Store champion names
   const [patchVersion, setPatchVersion] = useState("1.15.7");
+  const [unplayedChampions, setUnplayedChampions] = useState([]);
+  const [showUnplayed, setShowUnplayed] = useState(false);
 
   useEffect(() => {
     const fetchPatchVersion = async () => {
@@ -92,6 +94,19 @@ const PlayerProfile = () => {
             allChampionNames[championId] = name;
           }
         }
+
+        const fullChampionListResponse = await fetch(
+          `https://ddragon.leagueoflegends.com/cdn/${patch}/data/en_US/champion.json`
+        );
+        const fullChampionList = await fullChampionListResponse.json();
+        const allChampions = Object.keys(fullChampionList.data);
+
+        const playedChampionIds = Object.keys(playerData.championsPlayed || {});
+        const neverPlayed = allChampions.filter(
+          (champId) => !playedChampionIds.includes(champId)
+        );
+
+        setUnplayedChampions(neverPlayed);
 
         console.log("Fetched player:", playerData);
         console.log("Fetched matches:", matchesData);
@@ -337,6 +352,39 @@ const PlayerProfile = () => {
       <Link to="/players" style={styles.link}>
         Back to Leaderboard
       </Link>
+      <div style={{ marginTop: "40px" }}>
+        <button
+          onClick={() => setShowUnplayed((prev) => !prev)}
+          style={{
+            backgroundColor: "#444",
+            color: "#fff",
+            border: "none",
+            padding: "10px 20px",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontSize: "16px",
+            opacity: 0.3, // starts as "hidden"
+            transition: "opacity 0.3s",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = 1)}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = 0.3)}
+        >
+          {showUnplayed ? "Hide Unplayed Champions" : "Show Unplayed Champions"}
+        </button>
+
+        {showUnplayed && (
+          <div style={{ marginTop: "20px", color: "#ccc" }}>
+            <h3>Never Played Champions:</h3>
+            <ul style={{ listStyle: "none", padding: 0 }}>
+              {unplayedChampions.map((champ) => (
+                <li key={champ} style={{ marginBottom: "4px" }}>
+                  {champ}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
