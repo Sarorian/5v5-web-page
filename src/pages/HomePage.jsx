@@ -43,8 +43,14 @@ const HomePage = () => {
           lookup[player.gameName] = player;
         });
         setPlayersLookup(lookup);
-
-        setMatches(matchesData.reverse());
+        setMatches(
+          matchesData.sort((a, b) => {
+            if (a.season !== b.season) {
+              return b.season - a.season; // Higher season number comes first
+            }
+            return b.game - a.game; // Within same season, higher game number comes first
+          })
+        );
 
         fetchChampionNames();
 

@@ -112,7 +112,14 @@ const PlayerProfile = () => {
         console.log("Fetched matches:", matchesData);
 
         setPlayer(playerData);
-        setMatches(matchesData.reverse());
+        setMatches(
+          matchesData.sort((a, b) => {
+            if (a.season !== b.season) {
+              return b.season - a.season; // Higher season number comes first
+            }
+            return b.game - a.game; // Within same season, higher game number comes first
+          })
+        );
         setChampionNames(allChampionNames);
         setLoading(false);
       } catch (err) {
