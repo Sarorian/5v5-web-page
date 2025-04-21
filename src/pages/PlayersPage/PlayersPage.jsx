@@ -17,6 +17,12 @@ const PlayersPage = () => {
         );
         const allMatches = await matchesResponse.json();
 
+        // Sort matches by Season and Game
+        allMatches.sort((a, b) => {
+          if (a.season !== b.season) return a.season - b.season;
+          return a.game - b.game; // Assuming 'game' is a unique identifier per season
+        });
+
         // Group matches into seasons (50 games per season)
         let seasons = [];
         for (let i = 0; i < allMatches.length; i += 50) {
