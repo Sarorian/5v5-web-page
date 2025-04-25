@@ -135,6 +135,7 @@ const HomePage = () => {
     });
 
     const bestKDA = Object.entries(kdaStats)
+      .filter(([name]) => playerGames[name] >= 50) // Only players with 50+ games
       .map(([name, { kills, assists, deaths }]) => {
         const kda = deaths === 0 ? kills + assists : (kills + assists) / deaths;
         return { name, avgKDA: kda.toFixed(2) };
