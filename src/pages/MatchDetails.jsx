@@ -159,8 +159,8 @@ const styles = {
     borderRadius: "12px",
     marginBottom: "25px",
     boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
-    marginLeft: "10rem", // Add left margin
-    marginRight: "10rem", // Add right margin
+    marginLeft: "1rem", // Add left margin
+    marginRight: "1rem", // Add right margin
   },
   matchHeader: {
     display: "flex",
