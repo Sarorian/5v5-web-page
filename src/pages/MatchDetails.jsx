@@ -159,8 +159,8 @@ const styles = {
     borderRadius: "12px",
     marginBottom: "25px",
     boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
-    marginLeft: "1rem", // Add left margin
-    marginRight: "1rem", // Add right margin
+    marginLeft: "1rem",
+    marginRight: "1rem",
   },
   matchHeader: {
     display: "flex",
@@ -219,6 +219,50 @@ const styles = {
   loading: {
     textAlign: "center",
     color: "#ccc",
+  },
+  // Responsive styles for mobile
+  "@media (max-width: 768px)": {
+    matchCard: {
+      marginLeft: "10px",
+      marginRight: "10px",
+      padding: "15px",
+    },
+    matchHeader: {
+      fontSize: "0.85rem",
+    },
+    teams: {
+      flexDirection: "column", // Stack teams vertically on mobile
+      gap: "10px",
+    },
+    team: {
+      flex: "1 1 100%", // Full width on small screens
+    },
+    playerRow: {
+      gap: "8px", // Less gap for better use of space on small screens
+      fontSize: "0.9rem",
+    },
+    icon: {
+      width: "25px",
+      height: "25px",
+    },
+  },
+  "@media (max-width: 480px)": {
+    matchCard: {
+      marginLeft: "5px",
+      marginRight: "5px",
+      padding: "10px",
+    },
+    matchHeader: {
+      fontSize: "0.8rem",
+    },
+    playerRow: {
+      gap: "5px", // Even smaller gap on very small screens
+      fontSize: "0.85rem",
+    },
+    icon: {
+      width: "20px",
+      height: "20px",
+    },
   },
 };
 
