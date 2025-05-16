@@ -108,7 +108,9 @@ const PlayersPage = () => {
         }
 
         const gamesPlayed = wins + losses;
-        const points = gamesPlayed > 0 ? (wins / gamesPlayed) * wins : 0;
+        if (gamesPlayed === 0) return null; // Skip player
+
+        const points = (wins / gamesPlayed) * wins;
         const kda =
           deaths > 0
             ? ((kills + assists) / deaths).toFixed(2)
@@ -116,6 +118,7 @@ const PlayersPage = () => {
 
         return { ...player, wins, losses, kills, deaths, assists, points, kda };
       })
+      .filter((player) => player !== null) // Exclude players with 0 games
       .sort((a, b) => b.points - a.points);
   };
 
