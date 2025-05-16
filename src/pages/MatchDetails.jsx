@@ -1,17 +1,16 @@
-// MatchDetails.jsx
 import React, { useEffect, useState } from "react";
-import { useParams, Link, useLocation } from "react-router-dom";
+import { useParams, useLocation, Link } from "react-router-dom";
 
 const MatchDetails = () => {
-  const { matchId } = useParams(); // Get matchId from URL
-  const { search } = useLocation(); // Extract query parameters from URL
+  const { matchId } = useParams();
+  const { search } = useLocation();
+
+  const riotID = new URLSearchParams(search).get("player");
+  const tagLine = riotID ? riotID.split("#")[1] : null;
+  const [patchVersion, setPatchVersion] = useState("15.7.1");
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Extract player from query params
-  const riotID = new URLSearchParams(search).get("player"); // Get full riotID (e.g., Sarorian#NA1)
-  const playerName = riotID ? riotID.split("#")[0] : null;
+  const [championNames, setChampionNames] = useState({});
 
   useEffect(() => {
     const fetchMatchDetails = async () => {
@@ -19,14 +18,12 @@ const MatchDetails = () => {
         const response = await fetch(
           `https://lobsterapi-f663d2b5d447.herokuapp.com/api/matches/${matchId}`
         );
-        if (!response.ok) throw new Error(`Error fetching match details`);
+        if (!response.ok) throw new Error("Error fetching match details");
         const matchData = await response.json();
-
         setMatch(matchData);
-        setLoading(false);
       } catch (err) {
-        console.error("Error fetching match details:", err);
-        setError(err.message);
+        console.error(err);
+      } finally {
         setLoading(false);
       }
     };
@@ -34,99 +31,195 @@ const MatchDetails = () => {
     fetchMatchDetails();
   }, [matchId]);
 
-  if (loading)
-    return (
-      <div style={styles.container}>
-        <h2>Loading...</h2>
-      </div>
-    );
-  if (error)
-    return (
-      <div style={styles.container}>
-        <h2>Error: {error}</h2>
-      </div>
-    );
-  if (!match)
-    return (
-      <div style={styles.container}>
-        <h2>Match not found.</h2>
-      </div>
-    );
+  useEffect(() => {
+    const fetchPatchVersion = async () => {
+      try {
+        const response = await fetch(
+          "https://ddragon.leagueoflegends.com/api/versions.json"
+        );
+        const data = await response.json();
+        if (data.length > 0) {
+          setPatchVersion(data[0]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch patch version:", err);
+      }
+    };
 
-  // Fetch the player object to get the riotID (assuming it's part of the match data)
-  const player = [...match.winningTeam, ...match.losingTeam].find(
-    (p) => p.playerName === playerName
-  );
+    fetchPatchVersion();
+  }, []);
 
-  if (!player) return <div>Player not found in this match</div>;
+  useEffect(() => {
+    const fetchChampionNames = async () => {
+      const url = `https://ddragon.leagueoflegends.com/cdn/${patchVersion}/data/en_US/champion.json`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        setChampionNames(data.data);
+      } catch (error) {
+        console.error("Error fetching champion names:", error);
+      }
+    };
+
+    fetchChampionNames();
+  }, [patchVersion]);
+
+  const idToName = (championId) => {
+    const champion = championNames[championId];
+    return champion ? champion.name : championId;
+  };
+
+  const getChampionIcon = (champion) =>
+    `https://ddragon.leagueoflegends.com/cdn/${patchVersion}/img/champion/${champion}.png`;
+
+  if (loading) return <p style={styles.loading}>Loading match history...</p>;
 
   return (
-    <div style={styles.container}>
-      <h1>Match Details</h1>
-      <h3>
-        Date: {match.date} | Time: {match.time}
-      </h3>
-
-      <h2>Winning Team</h2>
-      <ul style={styles.list}>
-        {match.winningTeam.map((player) => (
-          <li key={player.playerName} style={styles.listItem}>
-            {player.playerName} - {player.champion} ({player.role})
-            <p>
-              KDA: {player.kills} / {player.deaths} / {player.assists}
-            </p>
-          </li>
-        ))}
-      </ul>
-
-      <h2>Losing Team</h2>
-      <ul style={styles.list}>
-        {match.losingTeam.map((player) => (
-          <li key={player.playerName} style={styles.listItem}>
-            {player.playerName} - {player.champion} ({player.role})
-            <p>
-              KDA: {player.kills} / {player.deaths} / {player.assists}
-            </p>
-          </li>
-        ))}
-      </ul>
-
-      <h2>Bans</h2>
-      <ul style={styles.list}>
-        {match.bans.map((ban, index) => (
-          <li key={index} style={styles.listItem}>
-            {ban}
-          </li>
-        ))}
-      </ul>
-
-      {/* Dynamically generate the back link, URL encode the player riotID */}
-      <Link
-        to={`/players/${encodeURIComponent(riotID)}`} // Encode the full player riotID
-        style={styles.link}
-      >
-        Back to Player Profile
-      </Link>
+    <div style={styles.matchCard}>
+      <div style={styles.matchHeader}>
+        <span>{match.date}</span>
+        <span>{match.time}</span>
+      </div>
+      <div style={styles.teams}>
+        {/* Winning Team */}
+        <div style={styles.team}>
+          <h3 style={styles.winning}>Winning Team</h3>
+          {match.winningTeam.map((player) => (
+            <div key={player.playerName} style={styles.playerRow}>
+              <img
+                src={getChampionIcon(player.champion)}
+                alt={player.champion}
+                style={styles.icon}
+                onError={(e) => (e.target.style.display = "none")}
+              />
+              <span>
+                <Link
+                  to={`/players/${encodeURIComponent(
+                    `${player.playerName}#${tagLine}`
+                  )}`}
+                  style={styles.playerLink}
+                >
+                  {player.playerName}
+                </Link>{" "}
+                –{" "}
+                <span style={styles.championName}>
+                  {idToName(player.champion)}
+                </span>
+                (
+                <span style={styles.kda}>
+                  {player.kills}/{player.deaths}/{player.assists}
+                </span>
+                )
+              </span>
+            </div>
+          ))}
+        </div>
+        {/* Losing Team */}
+        <div style={styles.team}>
+          <h3 style={styles.losing}>Losing Team</h3>
+          {match.losingTeam.map((player) => (
+            <div key={player.playerName} style={styles.playerRow}>
+              <img
+                src={getChampionIcon(player.champion)}
+                alt={player.champion}
+                style={styles.icon}
+                onError={(e) => (e.target.style.display = "none")}
+              />
+              <span>
+                <Link
+                  to={`/players/${encodeURIComponent(
+                    `${player.playerName}#${tagLine}`
+                  )}`}
+                  style={styles.playerLink}
+                >
+                  {player.playerName}
+                </Link>{" "}
+                –{" "}
+                <span style={styles.championName}>
+                  {idToName(player.champion)}
+                </span>
+                (
+                <span style={styles.kda}>
+                  {player.kills}/{player.deaths}/{player.assists}
+                </span>
+                )
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
 
 const styles = {
-  container: {
+  matchCard: {
+    backgroundColor: "#1e1e1e",
     padding: "20px",
+    borderRadius: "12px",
+    marginBottom: "25px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+    marginLeft: "10rem", // Add left margin
+    marginRight: "10rem", // Add right margin
+  },
+  matchHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginBottom: "10px",
+    fontWeight: "bold",
+    color: "#aaa",
+    fontSize: "0.9rem",
+    flexWrap: "wrap",
+  },
+  teams: {
+    display: "flex",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: "20px",
+  },
+  team: {
+    flex: "1 1 45%",
+    minWidth: "280px",
+  },
+  winning: {
+    color: "#4caf50",
+    marginBottom: "10px",
+    fontSize: "1.1rem",
+  },
+  losing: {
+    color: "#f44336",
+    marginBottom: "10px",
+    fontSize: "1.1rem",
+  },
+  playerRow: {
+    display: "flex",
+    alignItems: "center",
+    marginBottom: "6px",
+    gap: "10px",
+    fontSize: "0.95rem",
+    flexWrap: "wrap",
+  },
+  icon: {
+    width: "30px",
+    height: "30px",
+    borderRadius: "6px",
+    flexShrink: 0,
+  },
+  playerLink: {
+    color: "#00bcd4",
+    textDecoration: "none",
+    fontWeight: "bold",
+  },
+  championName: {
+    color: "#fff", // Champion name text set to white
+  },
+  kda: {
+    color: "#fff", // KDA text set to white
+  },
+  loading: {
     textAlign: "center",
-    color: "#fff",
-    backgroundColor: "#222",
-    minHeight: "100vh",
+    color: "#ccc",
   },
-  list: { listStyleType: "none", padding: 0 },
-  listItem: {
-    backgroundColor: "#333",
-    padding: "10px",
-    borderRadius: "5px",
-    marginBottom: "5px",
-  },
-  link: { color: "#1e90ff", textDecoration: "none", fontWeight: "bold" },
 };
 
 export default MatchDetails;
