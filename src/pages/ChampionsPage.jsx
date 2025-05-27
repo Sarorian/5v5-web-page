@@ -9,6 +9,7 @@ const ChampionsPage = () => {
   const [sortBy, setSortBy] = useState("presence");
   const [patchVersion, setPatchVersion] = useState("15.7.1");
   const [championNames, setChampionNames] = useState({});
+  const [allChampions, setAllChampions] = useState([]);
 
   useEffect(() => {
     const fetchPatchVersion = async () => {
@@ -51,7 +52,12 @@ const ChampionsPage = () => {
           const url = `https://ddragon.leagueoflegends.com/cdn/${patchVersion}/data/en_US/champion.json`;
           const response = await fetch(url);
           const data = await response.json();
-          setChampionNames(data.data); // Set the champions data (ID -> Name)
+
+          setChampionNames(data.data); // Keep this for id-to-name lookup
+
+          // Store as array for easy comparison later
+          const allChampArray = Object.values(data.data); // [{id: 'Aatrox', name: 'Aatrox', ...}, ...]
+          setAllChampions(allChampArray);
         };
 
         await fetchChampionNames();
@@ -115,6 +121,10 @@ const ChampionsPage = () => {
   };
 
   const sortedChampions = sortChampions(champions, sortBy, sortDirection);
+  const playedChampionNames = new Set(champions.map((c) => c.name));
+  const unplayedChampions = allChampions.filter(
+    (champ) => !playedChampionNames.has(champ.id)
+  );
 
   const handleSort = (column) => {
     if (sortBy === column) {
@@ -207,6 +217,34 @@ const ChampionsPage = () => {
           })}
         </tbody>
       </table>
+      {unplayedChampions.length > 0 && (
+        <>
+          <h2 style={{ ...styles.header, marginTop: "40px", fontSize: "24px" }}>
+            Unplayed Champions
+          </h2>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th>Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              {unplayedChampions.map((champ) => (
+                <tr key={champ.id} style={styles.row}>
+                  <td style={{ ...styles.td, ...styles.nameCell }}>
+                    <img
+                      src={`https://ddragon.leagueoflegends.com/cdn/${patchVersion}/img/champion/${champ.image.full}`}
+                      alt={champ.name}
+                      style={styles.icon}
+                    />
+                    {champ.name}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
     </div>
   );
 };
