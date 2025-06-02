@@ -73,6 +73,8 @@ const HomePage = () => {
     const kdaStats = {};
     const winStreaks = {};
     const loseStreaks = {};
+    const mostKillsGame = { kills: 0 };
+    const mostDeathsGame = { deaths: 0 };
 
     let currentStreaks = {};
 
@@ -80,6 +82,22 @@ const HomePage = () => {
       const allPlayers = [...match.winningTeam, ...match.losingTeam];
 
       allPlayers.forEach((p) => {
+        // Track most kills in a game
+        if (p.kills > mostKillsGame.kills) {
+          mostKillsGame.kills = p.kills;
+          mostKillsGame.player = p.playerName;
+          mostKillsGame.match = match;
+          mostKillsGame.champion = p.champion;
+        }
+
+        // Track most deaths in a game
+        if (p.deaths > mostDeathsGame.deaths) {
+          mostDeathsGame.deaths = p.deaths;
+          mostDeathsGame.player = p.playerName;
+          mostDeathsGame.match = match;
+          mostDeathsGame.champion = p.champion;
+        }
+
         if (!uniqueChamps[p.playerName]) uniqueChamps[p.playerName] = new Set();
         uniqueChamps[p.playerName].add(p.champion);
 
@@ -135,7 +153,7 @@ const HomePage = () => {
     });
 
     const bestKDA = Object.entries(kdaStats)
-      .filter(([name]) => playerGames[name] >= 50) // Only players with 50+ games
+      .filter(([name]) => playerGames[name] >= 50)
       .map(([name, { kills, assists, deaths }]) => {
         const kda = deaths === 0 ? kills + assists : (kills + assists) / deaths;
         return { name, avgKDA: kda.toFixed(2) };
@@ -169,6 +187,8 @@ const HomePage = () => {
       mostUsedChamp,
       longestWinStreak,
       longestLoseStreak,
+      mostKillsGame,
+      mostDeathsGame,
     });
   }, [matches]);
 
@@ -221,6 +241,16 @@ const HomePage = () => {
           <li>
             👑 Most Played Champion: {funStats.mostUsedChamp?.[0]} (
             {funStats.mostUsedChamp?.[1]} times)
+          </li>
+          <li>
+            ⚔️ Most Kills in a Game: {funStats.mostKillsGame?.player} (
+            {funStats.mostKillsGame?.kills} as{" "}
+            {funStats.mostKillsGame?.champion})
+          </li>
+          <li>
+            ☠️ Most Deaths in a Game: {funStats.mostDeathsGame?.player} (
+            {funStats.mostDeathsGame?.deaths} as{" "}
+            {funStats.mostDeathsGame?.champion})
           </li>
         </ul>
       </div>
